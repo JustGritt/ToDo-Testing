@@ -1,22 +1,36 @@
 {
-  "devDependencies": {
-    "jest": "^29.5.0"
-  },
-  "name": "todo-testing",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JustGritt/ToDo-Testing.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/JustGritt/ToDo-Testing/issues"
-  },
-  "homepage": "https://github.com/JustGritt/ToDo-Testing#readme",
-  "description": ""
+    "devDependencies": {
+        "@types/crypto-js": "^4.1.1",
+        "@types/jest": "^29.5.1",
+        "jest": "^29.5.0",
+        "typescript": "^5.0.4"
+    },
+    "name": "todo-testing",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest"
+    },
+    "lib": [
+        "es2016",
+        "dom"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/JustGritt/ToDo-Testing.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/JustGritt/ToDo-Testing/issues"
+    },
+    "homepage": "https://github.com/JustGritt/ToDo-Testing#readme",
+    "description": "",
+    "dependencies": {
+        "babel-jest": "^29.5.0",
+        "crypto-js": "^4.1.1",
+        "esm": "^3.2.25",
+        "lodash": "^4.17.21",
+        "ts-jest": "^29.1.0"
+    }
 }
