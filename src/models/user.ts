@@ -1,5 +1,6 @@
+import { ToDoList } from './todolist';
 import sha256 from 'crypto-js/sha256';
-import { EmailException, AgeException, PasswordException } from '../exceptions/UserException';
+import UserException, { EmailException, AgeException, PasswordException, DuplicatedToDoListException } from '../exceptions/UserException';
 import UserUtils from '../helpers/userUtils';
 
 export default class User {
@@ -8,6 +9,7 @@ export default class User {
     private lastName: string;
     private birthDate: Date;
     private password: string;
+    private todolist?: ToDoList;
 
     constructor(email: User['email'], password: User['password'], firstName: User['firstName'], lastName: User['lastName'], birthDate: User['birthDate']) {
         this.email = email;
@@ -77,4 +79,18 @@ export default class User {
             return true;
         }
     }
+
+    public setTodolist(todolist: ToDoList): void {
+        if (this.todolist)
+            throw new DuplicatedToDoListException('This user already has a todolist');
+        else if (!this.isValidUser())
+            throw new UserException('This user is not valid');
+        else
+            this.todolist = todolist;
+    }
+
+    public getTodolist(): ToDoList | undefined {
+        return this.todolist;
+    }
+
 }
