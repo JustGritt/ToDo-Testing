@@ -6,6 +6,7 @@ import User from '../src/models/user';
 import { user } from './user.spec';
 import UserException, { DuplicatedToDoListException } from '../src/exceptions/UserException';
 import mockEmailSenderService from '../__mocks__/mockEmailSenderService';
+import { EmailSenderService } from '../src/services/EmailSenderService';
 
 
 beforeEach(async () => {
@@ -17,8 +18,20 @@ describe('ToDoList', () => {
     const todoList = new ToDoList([]);
 
     it('should add only one ToDoList per user', () => {
+        todoList.setUser(user)
         user.setTodolist(todoList);
-        expect(()=>user.setTodolist(todoList)).toThrow(UserException);
+        expect(() => user.setTodolist(todoList)).toThrow(UserException);
+    });
+
+    it('should send an email when a user is adding the 8th item to his toDoList', () => {
+        const items = Array.from({ length: 8 }, (_, i) => new Item(`Item ${i + 1}`, 'Content'));
+        const callback = () => {
+            for (let i = 0; i < items.length; i++) {
+                fakeTimerBetweenAddingUser(() => todoList.addItem(items[i]));
+            }
+        };
+        callback();
+        expect(EmailSenderService).toBeCalled();
     });
 
     describe('constructor', () => {

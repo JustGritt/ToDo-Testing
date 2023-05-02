@@ -20,6 +20,10 @@ export default class User {
         return this;
     }
 
+    public getEmail(): string {
+        return this.email;
+    }
+
     public setPassword(password: string): void {
         if (!UserUtils.checkPassword(password))
             throw new PasswordException('Password not valid')
