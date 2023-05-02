@@ -42,7 +42,7 @@ export class ToDoList {
                 }
             }
         } else {
-            throw new ToDoListItemAddRateLimitException('Wait 1 minute before adding another item')
+            throw new ToDoListItemAddRateLimitException('Wait 30 minutes before adding another item')
         }
     }
 

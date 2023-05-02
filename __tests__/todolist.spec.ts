@@ -4,34 +4,40 @@ import { Item } from '../src/models/item';
 import { fakeTimerBetweenAddingUser } from '../__mocks__/fakers';
 import User from '../src/models/user';
 import { user } from './user.spec';
-import UserException, { DuplicatedToDoListException } from '../src/exceptions/UserException';
+import UserException, { DuplicatedToDoListException, EmailException } from '../src/exceptions/UserException';
 import mockEmailSenderService from '../__mocks__/mockEmailSenderService';
 import { EmailSenderService } from '../src/services/EmailSenderService';
 
 
 beforeEach(async () => {
     jest.useFakeTimers();
-    mockEmailSenderService.mockClear();
+    jest.spyOn(EmailSenderService.prototype, 'sendEmail');
+    mockEmailSenderService.mockReset();
 });
 
 describe('ToDoList', () => {
     const todoList = new ToDoList([]);
 
-    it('should add only one ToDoList per user', () => {
-        todoList.setUser(user)
-        user.setTodolist(todoList);
-        expect(() => user.setTodolist(todoList)).toThrow(UserException);
+    
+    it('should throw exception if user not valid', () => {
+        expect(() => user.setEmail('dssdsd')).toThrow(EmailException);
+        user.setTodolist(todoList)
+        expect(user.getTodolist()).toBe(todoList);
     });
 
+    it('should add only one ToDoList per user', () => {
+        todoList.setUser(user)
+        expect(() => user.setTodolist(todoList)).toThrow(UserException);
+    });
+    
     it('should send an email when a user is adding the 8th item to his toDoList', () => {
-        const items = Array.from({ length: 8 }, (_, i) => new Item(`Item ${i + 1}`, 'Content'));
-        const callback = () => {
-            for (let i = 0; i < items.length; i++) {
-                fakeTimerBetweenAddingUser(() => todoList.addItem(items[i]));
-            }
-        };
-        callback();
-        expect(EmailSenderService).toBeCalled();
+        const todoList = new ToDoList([]);
+        todoList.setUser(user)
+        for (let i = 0; i < 9; i++) {
+            jest.advanceTimersByTime(1800000);
+            todoList.addItem(new Item(`Item ${i + 1}`, 'Content'));
+        }
+        expect(EmailSenderService.prototype.sendEmail).toBeCalled();
     });
 
     describe('constructor', () => {
@@ -57,7 +63,7 @@ describe('ToDoList', () => {
             expect(() => todoList.addItem(item2)).toThrow(ToDoListItemAddRateLimitException);
         });
 
-        it('should throw an exception if the last item was created less than a minute ago', () => {
+        it('should throw an exception if the last item was created less than a 30 minutes ago', () => {
             const callback = () => {
                 const item1 = new Item('Item 2', 'Content');
                 todoList.addItem(item1);
