@@ -1,13 +1,10 @@
 import { ToDoList } from '../src/models/todolist';
-import ToDoListMaxReachedException, { ToDoListDuplicateItemException, ToDoListItemAddRateLimitException } from '../src/exceptions/ToDoListException';
 import { Item } from '../src/models/item';
-import { fakeTimerBetweenAddingUser } from '../__mocks__/fakers';
-import User from '../src/models/user';
-import { user } from './user.spec';
+import { ItemsMaxLengthNameReachedException } from '../src/exceptions/ItemException';
+import ToDoListMaxReachedException from '../src/exceptions/ToDoListException';
 import UserException, { DuplicatedToDoListException } from '../src/exceptions/UserException';
 import mockEmailSenderService from '../__mocks__/mockEmailSenderService';
-import { EmailSenderService } from '../src/services/EmailSenderService';
-
+import { user } from './user.spec';
 
 beforeEach(async () => {
     jest.useFakeTimers();
@@ -15,57 +12,78 @@ beforeEach(async () => {
 });
 
 describe('ToDoList', () => {
-    const todoList = new ToDoList([]);
 
-    it('should add only one ToDoList per user', () => {
-        todoList.setUser(user)
-        user.setTodolist(todoList);
-        expect(() => user.setTodolist(todoList)).toThrow(UserException);
-    });
+    describe('ToDoList parameters', () => {
 
-    it('should send an email when a user is adding the 8th item to his toDoList', () => {
-        const items = Array.from({ length: 8 }, (_, i) => new Item(`Item ${i + 1}`, 'Content'));
-        const callback = () => {
-            for (let i = 0; i < items.length; i++) {
-                fakeTimerBetweenAddingUser(() => todoList.addItem(items[i]));
-            }
-        };
-        callback();
-        expect(EmailSenderService).toBeCalled();
-    });
+        it('A user should only have one ToDoList', () => {
+            const todoList = new ToDoList([]);
+            todoList.setUser(user);
+            user.setTodolist(todoList);
+            expect(() => user.setTodolist(todoList)).toThrow(UserException);
+            expect(() => user.getTodolist()).not.toThrow(UserException);
 
-    describe('constructor', () => {
-        it('should throw an exception if the number of items passed in is greater than 10', () => {
+            const newList = new ToDoList([]);
+            expect(() => user.setTodolist(newList)).toThrow(DuplicatedToDoListException);
+        });
+
+        it('Should return an exception if it contains more than 10 items', () => {
+            const todoList = new ToDoList([]);
             const items = Array.from({ length: 11 }, (_, i) => new Item(`Item ${i + 1}`, 'Content'));
             expect(() => todoList.addAllItems(items)).toThrow(ToDoListMaxReachedException);
         });
 
-        it('should not add duplicate items to the list', () => {
-            const item1 = new Item('Item 1', 'Content');
-            const item2 = new Item('Item 1', 'Content');
+        it('Should not return an exception if it contains only 4 elements', () => {
+            const todoList = new ToDoList([]);
+            for (let i = 0; i < 4; i++) {
+                jest.advanceTimersByTime(1800000);
+                todoList.addItem(new Item(`Item ${i + 1}`, 'Content'));
+            }
+            expect(todoList.getItems().length).toBe(4);
 
-            expect(() => todoList.addAllItems([item1, item2])).toThrow(ToDoListDuplicateItemException);
+            jest.advanceTimersByTime(1800000);
+            expect(() => todoList.addItem(new Item(`Item 5`, 'Content'))).not.toThrow(ToDoListMaxReachedException);
         });
     });
-    describe('addItem', () => {
-        const todoList = new ToDoList([]);
-        it('should add an item to the list if the last item was created more than a minute ago', async () => {
-            // Create an item and add it to the list then add another item to the list after 1 minute
-            const item1 = new Item('Item 1', 'Content');
-            const item2 = new Item('Item 3', 'Content');
-            todoList.addItem(item1);
-            expect(() => todoList.addItem(item2)).toThrow(ToDoListItemAddRateLimitException);
+
+    describe('ToDoList items', () => {
+        it('Should return an exception if it contains duplicate items', () => {
+            const todoList = new ToDoList([]);
+            const items = Array.from({ length: 4 }, (_, i) => new Item(`Item ${i + 1}`, 'Content'));
+            expect(() => todoList.addAllItems(items)).toThrow(ToDoListMaxReachedException);
         });
 
-        it('should throw an exception if the last item was created less than a minute ago', () => {
-            const callback = () => {
-                const item1 = new Item('Item 2', 'Content');
-                todoList.addItem(item1);
-            };
+        it('An item should have a content with less than 1000 letters', () => {
+            const todoList = new ToDoList([]);
+            const item = new Item('Item 1', 'Content');
+            expect(() => item.setContent('a'.repeat(1001))).toThrow(ItemsMaxLengthNameReachedException);
+        });
+    });
 
-            fakeTimerBetweenAddingUser(callback);
-            jest.runAllTimers();
-            expect(todoList.getItems()).toHaveLength(2);
+    describe('ToDoList add new item', () => {
+        it('Should add a new item', () => {
+            const todoList = new ToDoList([]);
+            const item = new Item('Item 1', 'Content');
+            todoList.addItem(item);
+            jest.advanceTimersByTime(1800000);
+            expect(todoList.getItems().length).toBe(1);
+        });
+
+        it('Should not be added if the user is not valid', () => {
+            invalidUser.setTodolist(new ToDoList([]));
+            const item = new Item('Item 1', 'Content');
+            expect(() => invalidUser.getTodolist().addItem(item)).toThrow(UserException);
+        });
+
+        it('Should wait 30 minutes before adding a new item', () => {
+            const todoList = new ToDoList([]);
+            const item = new Item('Item 1', 'Content');
+            expect(todoList.getItems().length).toBe(0);
+            todoList.addItem(item);
+            expect(todoList.getItems().length).toBe(1);
+
+            jest.advanceTimersByTime(1800000);
+            expect(() => todoList.addItem(new Item('Item 2', 'Content'))).not.toThrow(ToDoListMaxReachedException);
+            expect(() => todoList.addItem(new Item('Item 3', 'Content'))).toThrow(ToDoListMaxReachedException);
         });
     });
 });
